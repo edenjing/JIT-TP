@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="a409b91b-93cb-4f69-885d-e5e21fcd9246" name="QDTP">
+        <fileTransfer accessType="SFTP" host="10.120.16.195" port="22" sshConfigId="58eee145-ac5f-4b8b-b74c-5756f21ccb0b" sshConfig="edenjingzhao@10.120.16.195:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
