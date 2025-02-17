@@ -13,7 +13,6 @@ from sklearn.preprocessing import StandardScaler
 import time
 
 
-
 class Dict(dict):
     __setattr__ = dict.__setitem__
     __getattr__ = dict.__getitem__
@@ -61,7 +60,7 @@ def monitor_memory(interval=1, output_file="memory_log.txt"):
                     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     cpu_percent = process.cpu_percent()
                     memory_info = process.memory_info()
-                    memory_usage_mb = memory_info.rss / 1024 / 1024
+                    memory_usage_gb = memory_info.rss / 1024 / 1024 / 1024
                     system_memory = psutil.virtual_memory().percent
 
                     # Get GPU memory if using PyTorch
@@ -71,9 +70,11 @@ def monitor_memory(interval=1, output_file="memory_log.txt"):
                     else:
                         gpu_memory = 0
 
-                    f.write(f"{current_time},{cpu_percent:.1f},{memory_usage_mb:.2f},"
+                    f.write(f"{current_time},{cpu_percent:.1f},{memory_usage_gb:.2f},"
                             f"{system_memory:.1f},{gpu_memory:.2f}\n")
-                    print(f"{current_time},{cpu_percent:.1f},{memory_usage_mb:.2f},{system_memory:.1f},{gpu_memory:.2f}")
+                    print(f"current_time: {current_time}, cpu_percent: {cpu_percent:.1f}, "
+                          f"memory_usage_gb: {memory_usage_gb:.2f}, system_memory: {system_memory:.1f},"
+                          f"gpu_memory: {gpu_memory:.2f}")
                     f.flush()
 
                     time.sleep(interval)

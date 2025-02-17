@@ -62,7 +62,7 @@ class GlobalEncoder(nn.Module):
     # Add:
     # 1. the validity weight of adjacent regions
     # 2. the learnable parameter matrix to capture spatial correlation
-    def forward(self, global_graph, time_slots): # global_graph, batch_local_g, speeds_h
+    def forward(self, global_graph, time_slots):  # global_graph, batch_local_g, speeds_h
         # Move graph to the same device as the model
         global_graph = global_graph.to(self.device)
 

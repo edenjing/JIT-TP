@@ -13,9 +13,6 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from preprocess.regionData import get_speed_profile, read_grids_info, get_adjacent_regions
 
-
-
-
 def load_data(speed_path, region_matrix_path, region_edges_path, gridGra, time_slot_size, edge_mapping_path):
     """
     Load data from txt files

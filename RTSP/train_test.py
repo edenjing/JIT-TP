@@ -23,6 +23,7 @@ from model import RegionTSP
 import psutil
 import dgl
 from utils import normalize_ground_truth, monitor_memory, stop_monitoring
+from conf import RTSPConfig
 
 
 import os
@@ -91,6 +92,7 @@ def get_spatial_indices(region_id, region_matrix):
 
     return ordered_indices
 
+
 def create_local_graph(region_id, region_matrix,):
     """
     Creates local graph as a DGL graph object
@@ -153,7 +155,7 @@ def compute_loss(pred, true):
     #     true: true values [batch_size, num_edges, features]
     # """
     # mse_per_edge = torch.mean((pred - true) ** 2, dim=(0, 2))  # Shape: (891,)
-    # return mse_per_edge.mean()
+    # return mse_per_edge.mean()/1000
     # # return mse_per_edge.mean()
 
     """
@@ -199,10 +201,39 @@ def compute_loss(pred, true):
 
     # return final_loss
 
-    return final_loss
+    return final_loss/1000
+
 
 def compute_metrics(pred, true):
     epsilon = 1e-7
+    # """
+    # Compute MAE, RMSE and MAPE
+    # Args:
+    #     pred: predicted values[batch_size, num_edges, features]
+    #     true: true values [batch_size, num_edges, features]
+    # """
+    # # ensure inputs are on cpu and converted to numpy
+    # pred = pred.detach().cpu().numpy()
+    # true = true.detach().cpu().numpy()
+    #
+    # # Compute metrics across all dimensions
+    # mae = np.mean(np.abs(pred - true))
+    # rmse = np.sqrt(np.mean(np.square(pred - true)))
+    # mape = np.mean(np.abs((pred - true) / (true + 1e-5))) * 100
+    #
+    # # # If you want metrics per feature (across batch and edges)
+    # # mae_per_feature = np.mean(np.abs(pred - true), axis=(0, 1))  # shape: (3,)
+    # # rmse_per_feature = np.sqrt(np.mean(np.square(pred - true), axis=(0, 1)))  # shape: (3,)
+    # # mape_per_feature = np.mean(np.abs((pred - true) / (true + 1e-5)), axis=(0, 1)) * 100  # shape: (3,)
+    #
+    # # # If you want metrics per edge (across batch and features)
+    # # mae_per_edge = np.mean(np.abs(pred - true), axis=(0, 2))  # shape: (891,)
+    # # rmse_per_edge = np.sqrt(np.mean(np.square(pred - true), axis=(0, 2)))  # shape: (891,)
+    # # mape_per_edge = np.mean(np.abs((pred - true) / (true + 1e-5)), axis=(0, 2)) * 100  # shape: (891,)
+    #
+    # # return mae, rmse, mape, mae_per_feature, rmse_per_feature, mape_per_feature
+    # return mae/1000, rmse/1000, mape/1000
+    # # return mae, rmse, mape
 
     """
     Compute robust metrics with safety checks
@@ -225,7 +256,7 @@ def compute_metrics(pred, true):
         return 0, 0, 0
 
     # return mae, rmse, mape
-    return mae, rmse, mape
+    return mae/1000, rmse/1000, mape/1000
 
 
 def train(model, train_loader, valid_loader, region_matrix, global_graph, opt, device):
@@ -278,7 +309,7 @@ def train(model, train_loader, valid_loader, region_matrix, global_graph, opt, d
                 # get data for current region
                 hist_data = region_hist[region_id].to(device)
                 # print("hist_data.size(1):", hist_data.size(1))
-                if hist_data.size(1) == 0 or hist_data.size(1) >= 5000:
+                if hist_data.size(1) == 0 or hist_data.size(1) >= 2000:
                     continue
                 else:
                     print("region_id:", region_id, "edge_size:", hist_data.size(1), "\t")
@@ -573,7 +604,7 @@ def eval_epoch(model, valid_data, global_graph, region_matrix, device, opt):
 
 
 def model_testing(model, model_path, device, test_data, opt, global_graph, region_matrix):
-    model, epoch, metrics = load_model(model, model_path, device)
+    model, metrics = load_model(model, model_path, device)
 
     print("Test Size: {}".format(len(test_data)))
     test_loader = DataLoader(dataset=test_data, batch_size=opt.batch_size,
@@ -613,24 +644,19 @@ def load_model(model, load_path, device):
     Simple load function
     Returns: model, optimizer, epoch, metrics
     """
-    try:
-        checkpoint = torch.load(load_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        epoch = checkpoint['epoch']
 
-        metrics = {
-            'val_loss': checkpoint.get('val_loss', float('inf')),
-            'val_mae': checkpoint.get('val_mae', 0),
-            'val_rmse': checkpoint.get('val_rmse', 0),
-            'val_mape': checkpoint.get('val_mape', 0)
-        }
-
-        print(f'    - [Info] Model loaded from epoch {epoch}')
-        return model, epoch, metrics
-    except Exception as e:
-        print(f'    - [Error] Failed to load model: {str(e)}')
-        return model, 0, {'val_loss': float('inf')}
+    checkpoint = torch.load(load_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    # epoch = checkpoint['epoch']
+    metrics = {
+        'val_loss': checkpoint.get('val_loss', float('inf')),
+        'val_mae': checkpoint.get('val_mae', 0),
+        'val_rmse': checkpoint.get('val_rmse', 0),
+        'val_mape': checkpoint.get('val_mape', 0)
+    }
+    # print(f'    - [Info] Model loaded from epoch {epoch}')
+    return model, metrics
 
 
 def main():
@@ -699,7 +725,6 @@ def main():
 
 
     # ========= Loading Dataset ========= #
-
     t0 = time.time()
     speed_data, regions_edges, region_matrix, old2new_edge_dicts, \
         new2old_edge_dicts, new_edge2edge_neighbor_dicts = load_data(speed_path=opt.workspace,
@@ -713,6 +738,7 @@ def main():
 
     # create global region graph
     global_graph = create_global_graph(region_matrix)
+    RTSP_config = RTSPConfig(opt, global_graph)
 
     print("loading all initial data use {:.3f}s".format(time.time() - t0))
 
@@ -752,13 +778,14 @@ def main():
 
     # ========= Training Model ========= #
     # Initialize model
-    model = RegionTSP(global_graph=global_graph, time_slot_size=opt.time_slot_size, in_dim=opt.in_dim, spatial_feature_dim=opt.spatial_feature_dim,
-                      out_spatial_dim=opt.spatial_feature_dim, out_temporal_dim=opt.temporal_feature_dim,
-                      graph_layers=opt.graph_layer, rnn_layers=opt.rnn_layer, spatial_context_dim=opt.spatial_feature_dim,
-                      temporal_context_dim=opt.temporal_feature_dim, region_nums=opt.region_nums, edge_nums=opt.edge_nums,
-                      hidden_size=opt.hidden_size, pred_len=opt.pred_len, device=device)
+    # model = RegionTSP(global_graph=global_graph, time_slot_size=opt.time_slot_size, in_dim=opt.in_dim, spatial_feature_dim=opt.spatial_feature_dim,
+    #                   out_spatial_dim=opt.spatial_feature_dim, out_temporal_dim=opt.temporal_feature_dim,
+    #                   graph_layers=opt.graph_layer, rnn_layers=opt.rnn_layer, spatial_context_dim=opt.spatial_feature_dim,
+    #                   temporal_context_dim=opt.temporal_feature_dim, region_nums=opt.region_nums, edge_nums=opt.edge_nums,
+    #                   hidden_size=opt.hidden_size, pred_len=opt.pred_len, device=device)
+    # Initialize model
+    model = RegionTSP(**RTSP_config.get_config(), device=device)
     model.to(device)
-
 
     # train_utils = DataNormalizer(device)
     # train_utils.fit_scaler(train_loader)
