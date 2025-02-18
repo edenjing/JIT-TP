@@ -2,7 +2,7 @@
 
 This is the implement of Just-In-Time Framework. The overview of the framework is as follows:
 
-![Framework](framework.jpg)
+<img src="framework.jpg" width="60%">
 
 **[Step 1]** The *Search Space Estimation* model is utilized to estimate the search space. Meanwhile, the [*TTCkⁿSP*](https://github.com/edenjing/TTCKnSP) algorithm is used to compute candidate paths. This step __reduces the prediction regions spatially__ from the entire graph to a smaller set.
 
