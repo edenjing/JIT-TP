@@ -2,7 +2,7 @@
 
 This is the implement of Just-In-Time Framework. The overview of the framework is as follows:
 
-![Framework](framework.pdf)
+![Framework](framework.jpg)
 
 **[Step 1]** The *Search Space Estimation* model is utilized to estimate the search space. Meanwhile, the [*TTCkⁿSP*](https://github.com/edenjing/TTCKnSP) algorithm is used to compute candidate paths. This step __reduces the prediction regions spatially__ from the entire graph to a smaller set.
 
@@ -23,6 +23,6 @@ pytorch == 2.1.0, torchvision == 0.16.0, torchaudio == 2.1.0, pytorch-cuda = 12.
 Intel Xeon Platinum 8375C 2.9GHz NVIDIA RTX 4090 24GB
 
 ## Usage
-1. train SSE model and RTSP model in ./SSE/Searchsp/train_ssgrids.py and ./RTSP/train_test.py seperately
+1. train SSE model and RTSP model in ./SSE/Searchsp/train_ssgrids.py and ./RTSP/train_test.py 
 3. store the trained models
 4. perform gloabl region prediction scheduling in ./RTSP/schedule.py
